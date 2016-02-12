@@ -24,9 +24,9 @@ public:
 				" from " + dBParams.c_tableName + " where " +
 				dBParams.ShortURLColumnName + "='" + shortUrl.c_str() + "'";
 				
-		std::cout << queryStr << std::endl;
+		//std::cout << queryStr << std::endl;
 
-		return Query(queryStr,mapping);
+		return ListQuery(queryStr,mapping);
 	}
 	
 	virtual bool GetShortUrlMapping(std::string& longUrl, UrlMapping* mapping )
@@ -35,15 +35,21 @@ public:
 				" from " + dBParams.c_tableName + " where " +
 				dBParams.LongURLColumnName + "='" + longUrl.c_str() + "'";
 				
-		std::cout << queryStr << std::endl;
+		//::cout << queryStr << std::endl;
 
 		
-		return Query(queryStr,mapping);
+		return ListQuery(queryStr,mapping);
 	}
 	
-	virtual void AddUrlMapping(UrlMapping* pUrlMapping)
+	virtual bool AddUrlMapping(UrlMapping* pUrlMapping)
 	{
+		std::string queryStr = "insert into `" + dBParams.c_tableName + "` (`" + 
+		dBParams.LongURLColumnName + "`,`" + dBParams.ShortURLColumnName + "`) VALUES('" + 
+		pUrlMapping->GetLongUrl() + "','"  + pUrlMapping->GetShortUrl() + "')";
 		
+		//std::cout << queryStr << std::endl;
+		
+		return AddQuery(queryStr);
 	}
 	
 	virtual std::vector<UrlMapping> ListAllMappings()
@@ -78,7 +84,15 @@ public:
 	
 private:
 
-	bool Query( std::string& queryStr, UrlMapping* mapping )
+	bool AddQuery( std::string& queryStr )
+	{
+		mysqlpp::Query query = dBParams.conn.query(queryStr.c_str());
+		query.exec();
+		
+		return query.affected_rows() == 1;
+	}
+	
+	bool ListQuery( std::string& queryStr, UrlMapping* mapping )
 	{
 		mysqlpp::Query query = dBParams.conn.query(queryStr.c_str());
 		
@@ -88,7 +102,6 @@ private:
 				mysqlpp::Row row = *it;
 				mapping->SetLongUrl(row[0].c_str());
 				mapping->SetShortUrl(row[1].c_str());
-				std::cout << '\t' << row[0] << " " << row[1] << std::endl;
 				return true;
 			}
 		}

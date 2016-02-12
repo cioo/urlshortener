@@ -1,6 +1,8 @@
 #include <string>
 #include <iostream>
 #include <sys/time.h>
+#include <cstdlib>
+#include <ctime>
 
 #include "UrlShortener.h"
 #include "DBManager.h"
@@ -11,9 +13,25 @@ UrlShortener::UrlShortener()
 	m_pDBManager->Init();
 }
 
+static const char alphanum[] =
+"0123456789"
+"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+"abcdefghijklmnopqrstuvwxyz";
+
+char genRandom()
+{
+    return alphanum[rand() % (sizeof(alphanum) - 1)];
+}
+
 std::string UrlShortener::GenerateRandomString()
 {
 	std::string result;
+	srand(time(0));
+    for(unsigned int i = 0; i < 5; ++i)
+    {
+		result += genRandom();
+    }
+	
 	return result;
 }
 
@@ -27,7 +45,8 @@ UrlMapping UrlShortener::AddNewUrlMapping( std::string& longUrl )
 	{
 		std::string shortUrl = GenerateRandomString();
 		newMapping.SetShortUrl(shortUrl);
-		m_pDBManager->AddUrlMapping(&newMapping);
+		if( !m_pDBManager->AddUrlMapping(&newMapping) )
+			throw;
 		
 		return newMapping;
 	}

@@ -4,6 +4,7 @@
 #include <cgicc/Cgicc.h>
 #include <cgicc/HTTPHTMLHeader.h>
 #include <cgicc/HTMLClasses.h>
+#include <cgicc/HTTPRedirectHeader.h>
 
 #include "UrlShortener.h"
 
@@ -19,15 +20,15 @@ private:
 	};
 	
 public:
-	UrlShortenerApp() 
+	UrlShortenerApp(std::string args) 
 	{ 
-		std::cout << cgicc::HTTPHTMLHeader() << std::endl;
+		this->args = args;
 	}
 	
-	bool AddNewUrl( const cgicc::CgiEnvironment& env )
+	bool AddNewUrl( std::string queryString )
 	{
 		std::string longUrl;
-		if( !FindUrl(env, longUrl) )
+		if( !FindUrl(queryString, longUrl) )
 		{
 			return false;
 		}
@@ -44,17 +45,18 @@ public:
 		
 	}
 	
-	bool GotoLongUrl( const cgicc::CgiEnvironment& env )
+	bool GotoLongUrl( std::string queryString )
 	{
 		std::string shortUrl;
-		if( !FindUrl(env, shortUrl) )
+		if( !FindUrl(queryString, shortUrl) )
 		{
 			return false;
 		}
 		
 		try
 		{
-			std::string longUrl = m_shortener.GetShortUrlMapping(shortUrl).GetLongUrl();
+			std::string longUrl = m_shortener.GetLongUrlMapping(shortUrl).GetLongUrl();
+			std::cout << cgicc::HTTPRedirectHeader(longUrl) << std::endl;
 			return true;
 		}
 		catch( URLNotFoundException& e )
@@ -68,10 +70,10 @@ public:
 		}
 	}
 	
-	void PrintSingleMapping( const cgicc::CgiEnvironment& env )
+	void PrintSingleMapping( std::string queryString )
 	{
 		std::string longUrl;
-		if( !FindUrl(env, longUrl) )
+		if( !FindUrl(queryString, longUrl) )
 		{
 			return;
 		}
@@ -90,8 +92,10 @@ public:
 		}
 	}
 	
-	void PrintMappings( const cgicc::CgiEnvironment& /*env*/, std::string premessage = "" )
+	void PrintMappings( std::string /*queryString*/, std::string premessage = "" )
 	{
+		std::cout << cgicc::HTTPHTMLHeader() << std::endl;
+		
 		std::cout << cgicc::html() << std::endl;
 		std::cout << cgicc::head(cgicc::title("URL Shortener")) << std::endl;
 		
@@ -108,7 +112,7 @@ public:
 			for( UrlMapping& m : allMappings )
 			{
 				std::cout << cgicc::tr() << 
-					cgicc::td() << cgicc::a(m.GetShortUrl()).set("href", "/cgi-bin/?goto=" + m.GetShortUrl()) << cgicc::td() <<
+					cgicc::td() << cgicc::a(m.GetShortUrl()).set("href", "/cgi-bin/urlshortener?goto=" + m.GetShortUrl()) << cgicc::td() <<
 					cgicc::td() << cgicc::a(m.GetLongUrl()).set("href",m.GetLongUrl()) << cgicc::td() <<
 					cgicc::tr() << std::endl;
 			}
@@ -126,56 +130,67 @@ public:
 	void perform()
 	{
 		const cgicc::CgiEnvironment& env = cgi.getEnvironment();
-		std::string queryString = env.getQueryString();
+		
+		std::string queryString;
 		std::size_t foundString;
+		
+		if( args.length() > 0 )
+		{
+			queryString = args;
+		}
+		else
+		{
+			queryString = env.getQueryString();
+		}
+		
 		if( (foundString = queryString.find( queryStrings.c_AddAndListString )) != std::string::npos )
 		{
-			if( AddNewUrl( env ) )
-				PrintMappings( env, "URL added succesfully");
+			if( AddNewUrl( queryString ) )
+				PrintMappings( queryString, "URL added succesfully");
 			else
-				PrintMappings( env, "Invalid parameters given to the service!");
+				PrintMappings( queryString, "Invalid parameters given to the service!");
 		}
 		else if( (foundString = queryString.find( queryStrings.c_AddString )) != std::string::npos )
 		{
-			if( AddNewUrl( env ) )
-				PrintSingleMapping( env );
+			if( AddNewUrl( queryString ) )
+				PrintSingleMapping( queryString );
 			else
-				std::cout << "Did not work" << std::endl;
+				std::cout << "Did not work1" << std::endl;
 		}
 		else if( queryString == "" || (foundString = queryString.find( queryStrings.c_ListString )) != std::string::npos )
 		{
-			PrintMappings( env );
+			PrintMappings( queryString );
 		}
 		else if( (foundString = queryString.find( queryStrings.c_gotoString )) != std::string::npos )
 		{
-			if( !GotoLongUrl( env ) )
+			if( !GotoLongUrl( queryString ) )
 			{
-				std::cout << "Did not work" << std::endl;
+				std::cout << "Did not work2" << std::endl;
 			}
 		}
 		else{
-			PrintMappings( env, "Invalid Action specified!");
+			PrintMappings( queryString, "Invalid Action specified!");
 		}
 	}
 	
 private:	
 
-	bool FindUrl( const cgicc::CgiEnvironment& env, std::string& url )
+	bool FindUrl( std::string queryString, std::string& url )
 	{
-		std::size_t foundEq = env.getQueryString().find("=");
+		std::size_t foundEq = queryString.find("=");
 		if( foundEq == std::string::npos )
 		{
 			return false;
 		}
 		
-		std::size_t foundAmp = env.getQueryString().find("&");
+		std::size_t foundAmp = queryString.find("&");
 		if( foundAmp == std::string::npos )
 		{
-			url = env.getQueryString().substr(foundEq, env.getQueryString().size() );
+			url = queryString.substr(foundEq + 1, queryString.size() );
 		}
 		else
 		{
-			url = env.getQueryString().substr(foundEq, foundAmp );
+			url = queryString.substr(foundEq + 1, foundAmp );
 		}
 		
 		return true;
@@ -184,12 +199,22 @@ private:
 	UrlShortener m_shortener;
 	QueryStrings queryStrings;
 	cgicc::Cgicc cgi;
+	std::string args;
 };
 
-int main()
+int main(int argc, char** args)
 {
 	try{
-		UrlShortenerApp app;
+		if( argc > 1 )
+		{
+			UrlShortenerApp app(args[1]);
+		
+			app.perform();
+			
+			return 0;
+		}
+		
+		UrlShortenerApp app("");
 		
 		app.perform();
 	}
