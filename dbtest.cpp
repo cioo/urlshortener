@@ -8,19 +8,7 @@
 
 using namespace std;
 
-struct DBParams
-{
-	mysqlpp::Connection     conn;
-	const string c_DBHost = "localhost";
-	const string c_DBSock =  "/var/lib/mysql/mysql.sock";
-	const string c_DBName = "URLs";
-	const string c_tableName = "UrlMappings";
-	const string LongURLColumnName = "LongURL";
-	const string ShortURLColumnName = "ShortURL";
-
-	DBParams() : conn(false)
-	{};
-};
+#include "DBParams.h"
 
 struct DBParams dBParams;
 
