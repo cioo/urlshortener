@@ -4,6 +4,7 @@
 #include "DBParams.h"
 #include "UrlMapping.h"
 
+// MySql implementation of Data Store
 class DBManagerImpl : public IDBManager
 {
 public:

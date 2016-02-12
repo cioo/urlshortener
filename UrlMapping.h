@@ -1,11 +1,12 @@
 #include <string>
 
+// Represents a basic mapping of ShortUrl <=> Url
 class UrlMapping
 {
 public:
 	UrlMapping() { }
 	
-	UrlMapping(std::string& longUrl, std::string& shortUrl) : m_longUrl(longUrl), m_shortUrl(shortUrl), id(-1) 	{ }
+	UrlMapping(std::string& longUrl, std::string& shortUrl) : m_longUrl(longUrl), m_shortUrl(shortUrl)	{ }
 	
 	UrlMapping( const UrlMapping& other )
 	{
@@ -21,12 +22,7 @@ public:
 	
 	std::string GetShortUrl() const { return m_shortUrl; }
 	
-	void SetId(int id){ this->id = id; }
-	
-	int GetId() const { return id; }
-	
 private:
 	std::string m_longUrl;
 	std::string m_shortUrl;
-	int id;
 };

@@ -5,9 +5,11 @@
 #include <cgicc/HTTPHTMLHeader.h>
 #include <cgicc/HTMLClasses.h>
 #include <cgicc/HTTPRedirectHeader.h>
+#include <cgicc/HTTPStatusHeader.h>
 
 #include "UrlShortener.h"
 
+// This encapsulates the different user scenarios the service is suppose to handle.
 class UrlShortenerApp
 {
 private:
@@ -37,7 +39,16 @@ public:
 		
 		try
 		{
-			m_shortener.AddNewUrlMapping( longUrl );
+			if( longUrl.find_first_of("://") != std::string::npos )
+			{
+				m_shortener.AddNewUrlMapping( longUrl );
+			}
+			else
+			{
+				std::string qualifiedStr = "http://" + longUrl;
+				m_shortener.AddNewUrlMapping( qualifiedStr );
+			}
+			
 			return true;
 		}
 		catch( ... )
@@ -58,12 +69,13 @@ public:
 		try
 		{
 			std::string longUrl = m_shortener.GetLongUrlMapping(shortUrl).GetLongUrl();
-			std::cout << cgicc::HTTPRedirectHeader(longUrl) << std::endl;
+			std::cout << cgicc::HTTPRedirectHeader(longUrl);
+			
 			return true;
 		}
 		catch( URLNotFoundException& e )
 		{
-			std::cout << cgicc::HTTPHTMLHeader() << std::endl;
+			std::cout << cgicc::HTTPStatusHeader(404, "URL was not found!") << std::endl;
 			std::cout << "URL was not found!" << std::endl;
 			return false;
 		}
@@ -119,9 +131,9 @@ public:
 			for( UrlMapping& m : allMappings )
 			{
 				std::cout << cgicc::tr() << 
-					cgicc::td() << cgicc::a(m.GetShortUrl()).set("href", "/cgi-bin/urlshortener?goto=" + m.GetShortUrl()) << cgicc::td() <<
-					cgicc::td() << cgicc::a(m.GetLongUrl()).set("href",m.GetLongUrl()) << cgicc::td() <<
-					cgicc::tr() << std::endl;
+					cgicc::td() << cgicc::a(m.GetShortUrl()).set("href", "/cgi-bin/urlshortener?goto=" + m.GetShortUrl()) << cgicc::td();
+					std::cout << cgicc::td() << cgicc::a(m.GetLongUrl()).set("href",m.GetLongUrl()) << cgicc::td();
+					std::cout << cgicc::tr() << std::endl;
 			}
 			std::cout << cgicc::table() << std::endl;
 		}
@@ -129,12 +141,17 @@ public:
 		{
 			std::cout << cgicc::h2("No URLs present!") << std::endl;
 		}
+		std::cout << cgicc::h3("Enter new Url to shorten:") << std::endl; 
 		
+		std::cout<< "<form action=\"/cgi-bin/urlshortener\" method=\"get\" >" << 
+			"<textarea name=\"addlist\" cols=\"100\" rows=\"1\" ></textarea><br/>" <<
+			"<input type=\"submit\" value=\"Shorten!\" /> </form>" <<	std::endl;
+			
 		std::cout << cgicc::body() << std::endl;
 		std::cout << cgicc::html() << std::endl;
 	}
 	
-	void perform()
+	void Perform()
 	{
 		const cgicc::CgiEnvironment& env = cgi.getEnvironment();
 		
@@ -196,10 +213,12 @@ private:
 		}
 		else
 		{
-			url = queryString.substr(foundEq + 1, foundAmp );
+			url = queryString.substr(foundEq + 1, foundAmp );	
 		}
 		
-		return true;
+		url = cgicc::form_urldecode(url);
+		
+		return !url.empty();
 	}
 	
 	UrlShortener m_shortener;
@@ -213,16 +232,17 @@ int main(int argc, char** args)
 	try{
 		if( argc > 1 )
 		{
+			// This is used for local debugging purposes.
 			UrlShortenerApp app(args[1]);
 		
-			app.perform();
+			app.Perform();
 			
 			return 0;
 		}
 		
 		UrlShortenerApp app("");
 		
-		app.perform();
+		app.Perform();
 	}
 	catch(std::exception& e)
 	{

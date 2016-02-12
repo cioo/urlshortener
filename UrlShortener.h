@@ -14,6 +14,9 @@ private:
 	std::string m_url;
 };
 
+// Url Shortener logic is defined here.
+// This class is in charge of creating random shorturls for corresponding long urls 
+// and persisting them to the data store.
 class UrlShortener
 {
 public:
