@@ -2,7 +2,7 @@
 
 #include "DBManager.h"
 #include "DBParams.h"
-#include "UrlShortener.h"
+#include "UrlMapping.h"
 
 class DBManagerImpl : public IDBManager
 {
@@ -13,7 +13,6 @@ public:
 	{
 		if( !dBParams.conn.connect(dBParams.c_DBName.c_str(), dBParams.c_DBHost.c_str(), "", "" ) )
 		{
-			std::cout << "db connection failed" << std::endl;
 			exit(1);
 		}
 	}
@@ -23,8 +22,6 @@ public:
 		std::string queryStr = "select " + dBParams.LongURLColumnName + "," + dBParams.ShortURLColumnName +
 				" from " + dBParams.c_tableName + " where " +
 				dBParams.ShortURLColumnName + "='" + shortUrl.c_str() + "'";
-				
-		//std::cout << queryStr << std::endl;
 
 		return ListQuery(queryStr,mapping);
 	}
@@ -34,9 +31,6 @@ public:
 		std::string queryStr = "select " + dBParams.LongURLColumnName + "," + dBParams.ShortURLColumnName +
 				" from " + dBParams.c_tableName + " where " +
 				dBParams.LongURLColumnName + "='" + longUrl.c_str() + "'";
-				
-		//::cout << queryStr << std::endl;
-
 		
 		return ListQuery(queryStr,mapping);
 	}
@@ -46,8 +40,6 @@ public:
 		std::string queryStr = "insert into `" + dBParams.c_tableName + "` (`" + 
 		dBParams.LongURLColumnName + "`,`" + dBParams.ShortURLColumnName + "`) VALUES('" + 
 		pUrlMapping->GetLongUrl() + "','"  + pUrlMapping->GetShortUrl() + "')";
-		
-		//std::cout << queryStr << std::endl;
 		
 		return AddQuery(queryStr);
 	}
@@ -77,10 +69,7 @@ public:
 		return results;
 	}
 	
-	virtual void Close()
-	{
-		
-	}
+	virtual void Close() { }
 	
 private:
 

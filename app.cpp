@@ -63,7 +63,8 @@ public:
 		}
 		catch( URLNotFoundException& e )
 		{
-			std::cout << "URL was not found" << std::endl;
+			std::cout << cgicc::HTTPHTMLHeader() << std::endl;
+			std::cout << "URL was not found!" << std::endl;
 			return false;
 		}
 		catch( ... )
@@ -138,7 +139,6 @@ public:
 		const cgicc::CgiEnvironment& env = cgi.getEnvironment();
 		
 		std::string queryString;
-		std::size_t foundString;
 		
 		if( args.length() > 0 )
 		{
@@ -149,30 +149,30 @@ public:
 			queryString = env.getQueryString();
 		}
 		
-		if( (foundString = queryString.find( queryStrings.c_AddAndListString )) != std::string::npos )
+		if( queryString.find( queryStrings.c_AddAndListString ) != std::string::npos )
 		{
 			if( AddNewUrl( queryString ) )
 				PrintMappings( queryString, "URL added succesfully");
 			else
 				PrintMappings( queryString, "Invalid parameters given to the service!");
 		}
-		else if( (foundString = queryString.find( queryStrings.c_AddString )) != std::string::npos )
+		else if( queryString.find( queryStrings.c_AddString ) != std::string::npos )
 		{
 			if( AddNewUrl( queryString ) )
 				PrintSingleMapping( queryString );
 			else
-				std::cout << "Did not work1" << std::endl;
+			{
+				std::cout << cgicc::HTTPHTMLHeader() << std::endl;
+				std::cout << "Couldn't add new url!" << std::endl;
+			}
 		}
-		else if( queryString == "" || (foundString = queryString.find( queryStrings.c_ListString )) != std::string::npos )
+		else if( queryString == "" || queryString.find( queryStrings.c_ListString ) != std::string::npos )
 		{
 			PrintMappings( queryString );
 		}
-		else if( (foundString = queryString.find( queryStrings.c_gotoString )) != std::string::npos )
+		else if( queryString.find( queryStrings.c_gotoString ) != std::string::npos )
 		{
-			if( !GotoLongUrl( queryString ) )
-			{
-				std::cout << "Did not work2" << std::endl;
-			}
+			GotoLongUrl( queryString );
 		}
 		else{
 			PrintMappings( queryString, "Invalid Action specified!");

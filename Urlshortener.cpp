@@ -13,6 +13,16 @@ UrlShortener::UrlShortener()
 	m_pDBManager->Init();
 }
 
+UrlShortener::~UrlShortener() 
+{
+	if( m_pDBManager )
+	{
+		m_pDBManager->Close();
+		delete m_pDBManager;
+		m_pDBManager = NULL;
+	}
+}
+
 static const char alphanum[] =
 "0123456789"
 "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -35,6 +45,7 @@ std::string UrlShortener::GenerateRandomString()
 	return result;
 }
 
+#define MAX_TRIES 10
 UrlMapping UrlShortener::AddNewUrlMapping( std::string& longUrl )
 {
 	UrlMapping newMapping;
@@ -43,7 +54,20 @@ UrlMapping UrlShortener::AddNewUrlMapping( std::string& longUrl )
 	UrlMapping existingMapping;
 	if( !m_pDBManager->GetShortUrlMapping( longUrl, &existingMapping ) )
 	{
-		std::string shortUrl = GenerateRandomString();
+		std::string shortUrl;
+		int tries = 0;
+		do
+		{
+			// Generate a random string for the short URL. Make sure we have
+			// not inserted the same random string before.
+			shortUrl = GenerateRandomString();
+			tries++;
+			if( tries == MAX_TRIES )
+			{
+				throw;
+			}
+		}while( m_pDBManager->GetLongUrlMapping( shortUrl, &existingMapping ));
+		
 		newMapping.SetShortUrl(shortUrl);
 		if( !m_pDBManager->AddUrlMapping(&newMapping) )
 			throw;

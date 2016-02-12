@@ -6,7 +6,6 @@ class IDBManager;
 
 class URLNotFoundException : std::exception
 {
-	
 public:
 	URLNotFoundException() {}
 	URLNotFoundException(std::string& url) : m_url(url) { };
@@ -28,9 +27,10 @@ public:
 	
 	std::vector<UrlMapping> GetAllMappings();
 	
+	~UrlShortener();
+	
 private:
 	std::string GenerateRandomString();
 	
 	IDBManager* m_pDBManager;
-	//std::unordered_map<UrlMapping> m_cachedUrlMappings;
 };
