@@ -17,6 +17,8 @@ private:
 		std::string c_ListString = "list";
 		std::string c_AddAndListString = "addlist";
 		std::string c_gotoString = "goto";
+		std::string c_dnsName = "ec2-52-53-217-102.us-west-1.compute.amazonaws.com";
+		std::string c_pathString = "/cgi-bin";
 	};
 	
 public:
@@ -72,6 +74,7 @@ public:
 	
 	void PrintSingleMapping( std::string queryString )
 	{
+		std::cout << cgicc::HTTPHTMLHeader() << std::endl;
 		std::string longUrl;
 		if( !FindUrl(queryString, longUrl) )
 		{
@@ -81,6 +84,9 @@ public:
 		try
 		{
 			std::string shortUrl = m_shortener.GetShortUrlMapping(longUrl).GetShortUrl();
+			std::cout << "http://" << queryStrings.c_dnsName << 
+			queryStrings.c_pathString << "/urlshortener?" << 
+			queryStrings.c_gotoString << "=" << shortUrl << std::endl;
 		}
 		catch( URLNotFoundException& e )
 		{
