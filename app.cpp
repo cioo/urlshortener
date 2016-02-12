@@ -29,7 +29,7 @@ public:
 		this->args = args;
 	}
 	
-	bool AddNewUrl( std::string queryString )
+	bool AddNewUrl( std::string queryString, bool fPrint = false )
 	{
 		std::string longUrl;
 		if( !FindUrl(queryString, longUrl) )
@@ -39,15 +39,19 @@ public:
 		
 		try
 		{
+			UrlMapping mapping;
 			if( longUrl.find_first_of("://") != std::string::npos )
 			{
-				m_shortener.AddNewUrlMapping( longUrl );
+				mapping = m_shortener.AddNewUrlMapping( longUrl );
 			}
 			else
 			{
 				std::string qualifiedStr = "http://" + longUrl;
-				m_shortener.AddNewUrlMapping( qualifiedStr );
+				mapping = m_shortener.AddNewUrlMapping( qualifiedStr );
 			}
+			
+			if( fPrint )
+				PrintSingleMapping( mapping.GetShortUrl() );
 			
 			return true;
 		}
@@ -82,32 +86,6 @@ public:
 		catch( ... )
 		{
 			return false;
-		}
-	}
-	
-	void PrintSingleMapping( std::string queryString )
-	{
-		std::cout << cgicc::HTTPHTMLHeader() << std::endl;
-		std::string longUrl;
-		if( !FindUrl(queryString, longUrl) )
-		{
-			return;
-		}
-		
-		try
-		{
-			std::string shortUrl = m_shortener.GetShortUrlMapping(longUrl).GetShortUrl();
-			std::cout << "http://" << queryStrings.c_dnsName << 
-			queryStrings.c_pathString << "/urlshortener?" << 
-			queryStrings.c_gotoString << "=" << shortUrl << std::endl;
-		}
-		catch( URLNotFoundException& e )
-		{
-			std::cout << "URL was not found" << std::endl;
-		}
-		catch( ... )
-		{
-			std::cout << "Exception!" << std::endl;	
 		}
 	}
 	
@@ -175,9 +153,7 @@ public:
 		}
 		else if( queryString.find( queryStrings.c_AddString ) != std::string::npos )
 		{
-			if( AddNewUrl( queryString ) )
-				PrintSingleMapping( queryString );
-			else
+			if( !AddNewUrl( queryString, true ) )
 			{
 				std::cout << cgicc::HTTPHTMLHeader() << std::endl;
 				std::cout << "Couldn't add new url!" << std::endl;
@@ -197,7 +173,14 @@ public:
 	}
 	
 private:	
-
+	void PrintSingleMapping( std::string shortUrl )
+	{
+		std::cout << cgicc::HTTPHTMLHeader() << std::endl;
+		std::cout << "http://" << queryStrings.c_dnsName << 
+			queryStrings.c_pathString << "/urlshortener?" << 
+			queryStrings.c_gotoString << "=" << shortUrl << std::endl;
+	}
+	
 	bool FindUrl( std::string queryString, std::string& url )
 	{
 		std::size_t foundEq = queryString.find("=");
