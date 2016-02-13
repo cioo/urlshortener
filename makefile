@@ -15,5 +15,5 @@ clean:
 
 
 install: urlshortener
-	cp urlshortener /var/www/cgi-bin/urlshortener
+	cp urlshortener /var/www/c/urlshortener
 	

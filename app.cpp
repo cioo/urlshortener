@@ -20,13 +20,16 @@ private:
 		std::string c_AddAndListString = "addlist";
 		std::string c_gotoString = "goto";
 		std::string c_dnsName = "ec2-52-53-217-102.us-west-1.compute.amazonaws.com";
-		std::string c_pathString = "/cgi-bin";
+		std::string c_pathString = "/c";
+		std::string c_appName = "urlshortener";
+		std::string c_shortUrlPrefix = "go";
 	};
 	
 public:
 	UrlShortenerApp(std::string args) 
 	{ 
 		this->args = args;
+		const cgicc::CgiEnvironment& env = cgi.getEnvironment();
 	}
 	
 	bool AddNewUrl( std::string queryString, bool fPrint = false )
@@ -62,7 +65,7 @@ public:
 		
 	}
 	
-	bool GotoLongUrl( std::string queryString )
+	bool GotoLongUrlFromQueryString( std::string queryString )
 	{
 		std::string shortUrl;
 		if( !FindUrl(queryString, shortUrl) )
@@ -89,6 +92,27 @@ public:
 		}
 	}
 	
+        bool GotoLongUrlFromShortUrl( std::string& shortUrl )
+        {
+                try
+                {
+                        std::string longUrl = m_shortener.GetLongUrlMapping(shortUrl).GetLongUrl();
+                        std::cout << cgicc::HTTPRedirectHeader(longUrl);
+
+                        return true;
+                }
+                catch( URLNotFoundException& e )
+                {
+                        std::cout << cgicc::HTTPStatusHeader(404, "URL was not found!") << std::endl;
+                        std::cout << "URL was not found!" << std::endl;
+                        return false;
+                }
+                catch( ... )
+                {
+                        return false;
+                }
+        }
+
 	void PrintMappings( std::string /*queryString*/, std::string premessage = "" )
 	{
 		std::cout << cgicc::HTTPHTMLHeader() << std::endl;
@@ -109,7 +133,7 @@ public:
 			for( UrlMapping& m : allMappings )
 			{
 				std::cout << cgicc::tr() << 
-					cgicc::td() << cgicc::a(m.GetShortUrl()).set("href", "/cgi-bin/urlshortener?goto=" + m.GetShortUrl()) << cgicc::td();
+					cgicc::td() << cgicc::a(m.GetShortUrl()).set("href", "/" + queryStrings.c_shortUrlPrefix + "/" + m.GetShortUrl()) << cgicc::td();
 					std::cout << cgicc::td() << cgicc::a(m.GetLongUrl()).set("href",m.GetLongUrl()) << cgicc::td();
 					std::cout << cgicc::tr() << std::endl;
 			}
@@ -121,7 +145,7 @@ public:
 		}
 		std::cout << cgicc::h3("Enter new Url to shorten:") << std::endl; 
 		
-		std::cout<< "<form action=\"/cgi-bin/urlshortener\" method=\"get\" >" << 
+		std::cout<< "<form action=\"" + queryStrings.c_pathString + "/" + queryStrings.c_appName + "\" method=\"get\" >" << 
 			"<textarea name=\"addlist\" cols=\"100\" rows=\"1\" ></textarea><br/>" <<
 			"<input type=\"submit\" value=\"Shorten!\" /> </form>" <<	std::endl;
 			
@@ -143,7 +167,7 @@ public:
 		{
 			queryString = env.getQueryString();
 		}
-		
+
 		if( queryString.find( queryStrings.c_AddAndListString ) != std::string::npos )
 		{
 			if( AddNewUrl( queryString ) )
@@ -165,7 +189,7 @@ public:
 		}
 		else if( queryString.find( queryStrings.c_gotoString ) != std::string::npos )
 		{
-			GotoLongUrl( queryString );
+			GotoLongUrlFromQueryString( queryString );
 		}
 		else{
 			PrintMappings( queryString, "Invalid Action specified!");
@@ -176,9 +200,8 @@ private:
 	void PrintSingleMapping( std::string shortUrl )
 	{
 		std::cout << cgicc::HTTPHTMLHeader() << std::endl;
-		std::cout << "http://" << queryStrings.c_dnsName << 
-			queryStrings.c_pathString << "/urlshortener?" << 
-			queryStrings.c_gotoString << "=" << shortUrl << std::endl;
+		std::cout << "http://" << queryStrings.c_dnsName << "/" << queryStrings.c_shortUrlPrefix << "/" <<
+			shortUrl << std::endl;
 	}
 	
 	bool FindUrl( std::string queryString, std::string& url )
